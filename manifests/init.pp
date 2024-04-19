@@ -1,11 +1,11 @@
 # @summary custom roundcube module
 # Assumes the use of puppet-php, no management within
-# @param [String] php_extension_dir Extensions directory used by php
-# @param [String] chartdir_version Version to install
+# TODO: Add logrotate
 class roundcube (
   String $roundcube_package = 'roundcube',
   Array[String] $additional_packages = ['roundcube-mysql'],
   Boolean $manage_dirs = true,
+  Boolean $init_db = true,
   String $configdir = '/etc/roundcube',
   String $webroot = '/var/lib/roundcube',
   String $web_owner = 'www-data',
@@ -30,7 +30,13 @@ class roundcube (
 ) {
   stdlib::ensure_packages($additional_packages << $roundcube_package)
   $_merged_config = $default_options + $options + { des_key => $des_key }
-
+  if $init_db {
+    exec { 'bin/initdb.sh --dir SQL':
+      cwd         => '/usr/share/roundcube',
+      refreshonly => true,
+      subscribe   => Package[$roundcube_package],
+    }
+  }
   if $manage_dirs {
     file { [$configdir, $webroot]:
       ensure => directory,
@@ -38,6 +44,12 @@ class roundcube (
       group  => $web_group,
       mode   => '0755',
     }
+  }
+  cron { 'roundcube: database cleanup':
+    command => '/usr/share/roundcube/bin/cleandb.sh',
+    user    => 'root',
+    hour    => 2,
+    minute  => 0,
   }
   file { "${configdir}/config.inc.php":
     ensure  => file,
