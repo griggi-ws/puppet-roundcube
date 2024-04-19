@@ -29,8 +29,7 @@ class roundcube (
   },
 ) {
   stdlib::ensure_packages($additional_packages << $roundcube_package)
-  # stdlib docs indicate + operator achieves the same as merge(), but we end up with duplicated values
-  $_merged_config = stdlib::merge($default_options + $options + { des_key => $des_key })
+  $_merged_config = $default_options + $options + { des_key => $des_key }
 
   if $manage_dirs {
     file { [$configdir, $webroot]:
