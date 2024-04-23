@@ -35,11 +35,11 @@ class roundcube (
 ) {
   stdlib::ensure_packages($additional_packages << $roundcube_package)
   $_dsnw = if $db_pass {
-    if $db_pass.is_a(Deferred) {
-      { dsnw => Deferred('sprintf', ['%s://%s:%s@%s/%s', $db_type, $db_user, $db_pass, $db_host, $db_name]) }
+    if $db_pass.unwrap.is_a(Deferred) {
+      { db_dsnw => Deferred('sprintf', ['%s://%s:%s@%s/%s', $db_type, $db_user, $db_pass.unwrap, $db_host, $db_name]) }
     }
     else {
-      { dsnw => "${db_type}://${db_user}:${db_pass}@${db_host}/${db_name}" }
+      { db_dsnw => "${db_type}://${db_user}:${db_pass.unwrap}@${db_host}/${db_name}" }
     }
   } else {
     {}
