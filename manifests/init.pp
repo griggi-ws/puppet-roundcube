@@ -27,9 +27,24 @@ class roundcube (
     enable_spellcheck => 'false',
     db_dsnw => '$dbtype://$dbuser:$dbpass@$dbserver$dbport/$dbname', # values provided in dpkg-reconfigure prompts
   },
+  Optional[String] $db_type = 'mysql',
+  Optional[String] $db_host,
+  Optional[String] $db_name,
+  Optional[String] $db_user,
+  Optional[Variant[String,Sensitive]] $db_pass,
 ) {
   stdlib::ensure_packages($additional_packages << $roundcube_package)
-  $_merged_config = $default_options + $options + { des_key => $des_key }
+  $_dsnw = if $db_pass {
+    if $db_pass.is_a(Deferred) {
+      { dsnw => Deferred('sprintf', ['%s://%s:%s@%s/%s', $db_type, $db_user, $db_pass, $db_host, $db_name]) }
+    }
+    else {
+      { dsnw => "${db_type}://${db_user}:${db_pass}@${db_host}/${db_name}" }
+    }
+  } else {
+    {}
+  }
+  $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw
   if $init_db {
     exec { 'bin/initdb.sh --dir SQL':
       path        => '/usr/bin:/usr/sbin',
