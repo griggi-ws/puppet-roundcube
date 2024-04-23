@@ -18,11 +18,10 @@
 */
 
 $config = array();
-<% @_merged_config.keys.sort.each do |key| -%>
-<% value = @_merged_config[key] -%>
-  <%- if value.is_a? Array -%>
-$config['<%= key %>'] = array(<%= value.map! { |element| "'#{element}'" }.join(', ') %>);
-  <%- else -%>
-$config['<%= key %>'] = <%= (value.is_a? String) ? "'#{value}'" : value %>;
-  <%- end -%>
-<% end -%>
+<% $config.each |$k| { -%>
+  <%- if type($k[1]) == Array {-%>
+$config['<%= $k[0] %>'] = array(<%= $k[1].map |$item| {  "'${item}'" }.join(', ') %>);
+  <%- } else { -%>
+$config['<%= $k[0] %>'] = <%= if type($k[1]) == String { "'${k[1]}'" } else { $k[1] } %>;
+  <%- } -%>
+<% } -%>

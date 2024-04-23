@@ -57,6 +57,6 @@ class roundcube (
     owner   => $web_owner,
     group   => $web_group,
     mode    => '0640',
-    content => template('roundcube/config.php.erb'),
+    content => stdlib::deferrable_epp('roundcube/config.php.epp', { config => $_merged_config }),
   }
 }
