@@ -21,6 +21,24 @@ $config = array();
 <% $config.each |$k| { -%>
   <%- if type($k[1]) =~ Type[Array] {-%>
 $config['<%= $k[0] %>'] = array(<%= $k[1].map |$item| {  "'${item}'" }.join(', ') %>);
+  <%- } elsif type($k[1]) =~ Type[Hash] { -%>
+$config['<%= $k[0] %>'] = array(<% $k[1].each|$item,$value| { %>
+        <%- if type($value) =~ Type[Array] { -%>
+  '<%= $item %>' => array(<%= $value.map |$subitem| {  "'${subitem}'" }.join(', ') %>),
+        <%- } elsif type($value) =~ Type[Hash] { -%>
+  '<%= $item %>' => array(<% $value.each|$subitem,$subvalue| { %>
+            <%- if type($subvalue) =~ Type[Array] { -%>
+      '<%= $subitem %>' => array(<%= $subvalue.map |$subsubitem| {  "'${subsubitem}'" }.join(', ') %>),
+            <%- } else { -%>
+      '<%= $subitem %>' => <%= if type($subvalue) =~ Type[String] { "'${subvalue}'" } else { $subvalue } %>,
+            <%- } -%>
+    <% } -%>
+  ),  
+        <%- } else { -%>
+  '<%= $item %>' => <%= if type($value) =~ Type[String] { "'${value}'" } else { $value } %>,
+        <%- } -%>
+<% } -%>
+);
   <%- } else { -%>
 $config['<%= $k[0] %>'] = <%= if type($k[1]) =~ Type[String] { "'${k[1]}'" } else { $k[1] } %>;
   <%- } -%>
