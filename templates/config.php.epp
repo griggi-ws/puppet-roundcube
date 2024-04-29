@@ -19,9 +19,9 @@
 
 $config = array();
 <% $config.each |$k| { -%>
-  <%- if type($k[1]) == Array {-%>
+  <%- if type($k[1]) =~ Type[Array] {-%>
 $config['<%= $k[0] %>'] = array(<%= $k[1].map |$item| {  "'${item}'" }.join(', ') %>);
   <%- } else { -%>
-$config['<%= $k[0] %>'] = <%= if type($k[1]) == String { "'${k[1]}'" } else { $k[1] } %>;
+$config['<%= $k[0] %>'] = <%= if type($k[1]) =~ Type[String] { "'${k[1]}'" } else { $k[1] } %>;
   <%- } -%>
 <% } -%>
