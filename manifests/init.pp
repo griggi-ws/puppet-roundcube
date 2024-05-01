@@ -48,8 +48,7 @@ class roundcube (
   }
   $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw
   if $init_db {
-    exec { 'bin/initdb.sh --dir SQL':
-      path        => '/usr/bin:/usr/sbin',
+    exec { '/usr/share/roundcube/bin/initdb.sh --dir SQL':
       cwd         => '/usr/share/roundcube',
       refreshonly => true,
       subscribe   => Package[$roundcube_package],
