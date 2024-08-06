@@ -33,7 +33,9 @@ class roundcube (
   Optional[String] $db_user,
   Optional[Variant[String,Sensitive]] $db_pass,
 ) {
-  stdlib::ensure_packages($additional_packages << $roundcube_package)
+  package { $additional_packages << $roundcube_package:
+    notify => Exec['initdb'],
+  }
 
   $_unwrapped = if $db_pass.is_a(Deferred) { Deferred('unwrap', [$db_pass]) }
   $_dsnw = if $db_pass {
@@ -48,10 +50,10 @@ class roundcube (
   }
   $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw
   if $init_db {
-    exec { '/usr/share/roundcube/bin/initdb.sh --dir SQL':
+    exec { 'initdb':
+      command     => '/usr/share/roundcube/bin/initdb.sh --dir SQL',
       cwd         => '/usr/share/roundcube',
       refreshonly => true,
-      subscribe   => Package[$roundcube_package],
     }
   }
   if $manage_dirs {
