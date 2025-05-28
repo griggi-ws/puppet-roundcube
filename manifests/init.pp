@@ -50,8 +50,19 @@ class roundcube (
   }
   $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw
   if $init_db {
+    case $facts['os']['distro']['codename'] {
+      'focal': {
+        $_upgrade_command = '/usr/share/roundcube/bin/initdb.sh --dir SQL'
+      }
+      'jammy': {
+        $_upgrade_command = '/usr/share/roundcube/bin/updatedb.sh --package=roundcube --dir=SQL'
+      }
+      default: {
+        fail("Unsupported OS version: ${facts['os']['distro']['codename']}")
+      }
+    }
     exec { 'initdb':
-      command     => '/usr/share/roundcube/bin/initdb.sh --dir SQL',
+      command     => $_upgrade_command,
       cwd         => '/usr/share/roundcube',
       refreshonly => true,
     }
