@@ -50,8 +50,6 @@ class roundcube (
   if $manage_initdb {
     file { "${install_dir}/bin/initdb.sh":
       ensure  => file,
-      owner   => $web_owner,
-      group   => $web_group,
       mode    => '0755',
       source  => 'puppet:///modules/roundcube/initdb.sh',
       require => $_package_require,
