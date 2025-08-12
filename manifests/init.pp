@@ -2,12 +2,15 @@
 # Assumes the use of puppet-php, no management within
 # TODO: Add logrotate
 class roundcube (
-  String $roundcube_package = 'roundcube',
+  Boolean $manage_package = true,
+  String $package_name = 'roundcube',
   Array[String] $additional_packages = ['roundcube-mysql'],
   Boolean $manage_dirs = true,
+  Boolean $manage_initdb = true,
   Boolean $init_db = true,
   String $configdir = '/etc/roundcube',
   String $webroot = '/var/lib/roundcube',
+  String $install_dir = '/usr/share/roundcube',
   String $web_owner = 'www-data',
   String $web_group = 'www-data',
   String[24] $des_key,
@@ -33,10 +36,27 @@ class roundcube (
   Optional[String] $db_user,
   Optional[Variant[String,Sensitive]] $db_pass,
 ) {
-  package { $additional_packages << $roundcube_package:
-    notify => Exec['initdb'],
+  if $manage_package {
+    $_package_require = Package[$package_name]
+    package { $package_name:
+      ensure => installed,
+    }
+  } else {
+    $_package_require = undef
   }
-
+  package { $additional_packages:
+    notify => Exec['initdb_roundcube'],
+  }
+  if $manage_initdb {
+    file { "${install_dir}/bin/initdb.sh":
+      ensure  => file,
+      owner   => $web_owner,
+      group   => $web_group,
+      mode    => '0755',
+      source  => 'puppet:///modules/roundcube/initdb.sh',
+      require => $_package_require,
+    }
+  }
   $_unwrapped = if $db_pass.is_a(Deferred) { Deferred('unwrap', [$db_pass]) }
   $_dsnw = if $db_pass {
     if $db_pass.is_a(Deferred) {
@@ -50,21 +70,13 @@ class roundcube (
   }
   $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw
   if $init_db {
-    case $facts['os']['distro']['codename'] {
-      'focal': {
-        $_upgrade_command = '/usr/share/roundcube/bin/initdb.sh --dir SQL'
-      }
-      'jammy': {
-        $_upgrade_command = '/usr/share/roundcube/bin/updatedb.sh --package=roundcube --dir=SQL'
-      }
-      default: {
-        fail("Unsupported OS version: ${facts['os']['distro']['codename']}")
-      }
-    }
-    exec { 'initdb':
+    $_upgrade_command = "${install_dir}/bin/initdb.sh --dir SQL"
+
+    exec { 'initdb_roundcube':
       command     => $_upgrade_command,
-      cwd         => '/usr/share/roundcube',
+      cwd         => $install_dir,
       refreshonly => true,
+      require     => File["${install_dir}/bin/initdb.sh"],
     }
   }
   if $manage_dirs {
@@ -76,7 +88,7 @@ class roundcube (
     }
   }
   cron { 'roundcube: database cleanup':
-    command => '/usr/share/roundcube/bin/cleandb.sh',
+    command => "${install_dir}/bin/cleandb.sh",
     user    => 'root',
     hour    => 2,
     minute  => 0,
