@@ -31,7 +31,7 @@ class roundcube (
     db_dsnw => '$dbtype://$dbuser:$dbpass@$dbserver$dbport/$dbname', # values provided in dpkg-reconfigure prompts
     #syslog_facility => 'LOG_MAIL', # To be implemented, roundcube expects this not as a quoted string but as a constant
     #log_driver => 'syslog',
-    cipher_method => 'AES-256-CBC', # Support FIPS systems by default
+    cipher_method => 'AES-256-GCM', # Support FIPS systems by default
   },
   Optional[String] $db_type = 'mysql',
   Optional[String] $db_host,
