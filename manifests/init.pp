@@ -8,6 +8,7 @@ class roundcube (
   Boolean $manage_dirs = true,
   Boolean $manage_initdb = true,
   Boolean $init_db = true,
+  Boolean $allow_cipher_override = true,
   String $configdir = '/etc/roundcube',
   String $webroot = '/var/lib/roundcube',
   String $install_dir = '/usr/share/roundcube',
@@ -69,7 +70,22 @@ class roundcube (
   } else {
     {}
   }
-  $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw
+  case $facts['os']['distro']['codename'] {
+    'focal': {
+      if $allow_cipher_override {
+        notify { 'Roundcube: overriding cipher to AES-256-CBC due to lack of support for AEAD in older Roundcube/OpenSSL versions': }
+        $_override_options = {
+          cipher_method => 'AES-256-CBC',
+        }
+      } else {
+        $_override_options = {}
+      }
+    }
+    default: {
+      $_override_options = {}
+    }
+  }
+  $_merged_config = $default_options + $options + { des_key => $des_key } + $_dsnw + $_override_options
   if $init_db {
     $_upgrade_command = "${install_dir}/bin/initdb.sh --dir SQL"
 
